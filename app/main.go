@@ -17,5 +17,5 @@ func main() {
 		fmt.Println("Error reading command:", error)
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stderr, "%s: command not found\n", command)
+	fmt.Println(command + ": command not found")
 }
