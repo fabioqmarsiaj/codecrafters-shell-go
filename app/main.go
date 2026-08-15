@@ -11,9 +11,9 @@ import (
 var _ = fmt.Print
 
 func main() {
-	// TODO: Uncomment the code below to pass the first stage
 
 	reader := bufio.NewReader(os.Stdin)
+outerLoop:
 	for {
 		fmt.Print("$ ")
 
@@ -23,15 +23,25 @@ func main() {
 			os.Exit(1)
 		}
 		command = strings.TrimSpace(command)
-		if command == "exit" {
-			break
+
+		cmd := createCommand(command)
+		if !cmd.isValid() {
+			fmt.Fprintln(os.Stderr, command+": command not found")
+			continue
 		}
-		if strings.HasPrefix(command, "echo") {
+
+		switch cmd {
+		case Type:
+			newCmd := createCommand(command[5:])
+			if !newCmd.isValid() {
+				fmt.Fprintln(os.Stderr, command[5:]+": "+newCmd.describe())
+				continue
+			}
+			fmt.Println(newCmd.describe())
+		case Echo:
 			fmt.Println(command[5:])
-		} else {
-			fmt.Println(command + ": command not found")
+		case Exit:
+			break outerLoop
 		}
-
 	}
-
 }
