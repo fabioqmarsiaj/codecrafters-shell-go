@@ -7,13 +7,8 @@ import (
 	"strings"
 )
 
-// Ensures gofmt doesn't remove the "fmt" import in stage 1 (feel free to remove this!)
-var _ = fmt.Print
-
 func main() {
-
 	reader := bufio.NewReader(os.Stdin)
-	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
 
 outerLoop:
 	for {
@@ -25,12 +20,13 @@ outerLoop:
 			os.Exit(1)
 		}
 		command = strings.TrimSpace(command)
-
 		if command == "" {
 			continue
 		}
 
-		cmdType, cmdName := createCommand(command, paths)
+		// Agora capturamos o cmdPath retornado
+		cmdType, cmdName, _ := createCommand(command)
+
 		if !cmdType.isValid() {
 			fmt.Println(cmdName + ": command not found")
 			continue
@@ -38,23 +34,24 @@ outerLoop:
 
 		switch cmdType {
 		case Type:
-			// Pega o argumento do comando type (ex: "type grep" -> "grep")
 			target := strings.TrimSpace(command[4:])
 
-			// Avalia o que é o alvo do type
-			targetType, _ := createCommand(target, paths)
+			// Avalia o alvo do type
+			targetType, targetName, targetPath := createCommand(target)
 
 			switch targetType {
 			case Type, Echo, Exit:
-				fmt.Printf("%s is a shell builtin\n", target)
+				fmt.Printf("%s is a shell builtin\n", targetName)
 			case External:
-				fullPath, _ := findInPath(target, paths)
-				fmt.Printf("%s is %s\n", target, fullPath)
+				// Usamos o targetPath que já veio pronto! Sem segundo LookPath.
+				fmt.Printf("%s is %s\n", targetName, targetPath)
 			default:
-				fmt.Printf("%s: not found\n", target)
+				fmt.Printf("%s: not found\n", targetName)
 			}
+
 		case Echo:
 			fmt.Println(command[5:])
+
 		case Exit:
 			break outerLoop
 		}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -35,24 +36,26 @@ func findInPath(cmdName string, paths []string) (string, bool) {
 	return "", false
 }
 
-func createCommand(input string, paths []string) (Command, string) {
+func createCommand(input string) (Command, string, string) {
 	parts := strings.Fields(input)
 	if len(parts) == 0 {
-		return NotFound, ""
+		return NotFound, "", ""
 	}
+
 	cmdName := parts[0]
 	switch cmdName {
 	case "type":
-		return Type, cmdName
+		return Type, cmdName, ""
 	case "echo":
-		return Echo, cmdName
+		return Echo, cmdName, ""
 	case "exit":
-		return Exit, cmdName
+		return Exit, cmdName, ""
 	default:
-		if _, found := findInPath(cmdName, paths); found {
-			return External, cmdName
+		// Executa o LookPath apenas AQUI
+		if fullPath, err := exec.LookPath(cmdName); err == nil {
+			return External, cmdName, fullPath
 		}
-		return NotFound, cmdName
+		return NotFound, cmdName, ""
 	}
 }
 
@@ -62,19 +65,6 @@ func (c Command) isValid() bool {
 		return true
 	default:
 		return false
-	}
-}
-
-func (c Command) describe() string {
-	switch c {
-	case Type:
-		return "type is a shell builtin"
-	case Echo:
-		return "echo is a shell builtin"
-	case Exit:
-		return "exit is a shell builtin"
-	default:
-		return "not found"
 	}
 }
 
