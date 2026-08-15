@@ -13,6 +13,8 @@ var _ = fmt.Print
 func main() {
 
 	reader := bufio.NewReader(os.Stdin)
+	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
+
 outerLoop:
 	for {
 		fmt.Print("$ ")
@@ -24,20 +26,33 @@ outerLoop:
 		}
 		command = strings.TrimSpace(command)
 
-		cmd := createCommand(command)
-		if !cmd.isValid() {
-			fmt.Fprintln(os.Stderr, command+": command not found")
+		if command == "" {
 			continue
 		}
 
-		switch cmd {
+		cmdType, cmdName := createCommand(command, paths)
+		if !cmdType.isValid() {
+			fmt.Println(cmdName + ": command not found")
+			continue
+		}
+
+		switch cmdType {
 		case Type:
-			newCmd := createCommand(command[5:])
-			if !newCmd.isValid() {
-				fmt.Fprintln(os.Stderr, command[5:]+": "+newCmd.describe())
-				continue
+			// Pega o argumento do comando type (ex: "type grep" -> "grep")
+			target := strings.TrimSpace(command[4:])
+
+			// Avalia o que é o alvo do type
+			targetType, _ := createCommand(target, paths)
+
+			switch targetType {
+			case Type, Echo, Exit:
+				fmt.Printf("%s is a shell builtin\n", target)
+			case External:
+				fullPath, _ := findInPath(target, paths)
+				fmt.Printf("%s is %s\n", target, fullPath)
+			default:
+				fmt.Printf("%s: not found\n", target)
 			}
-			fmt.Println(newCmd.describe())
 		case Echo:
 			fmt.Println(command[5:])
 		case Exit:
