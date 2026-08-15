@@ -21,11 +21,15 @@ func findInPath(cmdName string, paths []string) (string, bool) {
 		fullPath := filepath.Join(dir, cmdName)
 		info, err := os.Stat(fullPath)
 
-		// Verifica se o arquivo existe e se não é um diretório
+		// 1. Verifica se o arquivo existe e não é um diretório
 		if err == nil && !info.IsDir() {
-			// Nota: Para precisão total, você poderia checar se é executável,
-			// mas para o CodeCrafters a existência do arquivo no PATH costuma bastar.
-			return fullPath, true
+			// 2. Pega as permissões atuais do arquivo
+			mode := info.Mode()
+
+			// 3. Verifica se tem permissão de execução para o Dono, Grupo ou Outros (0111)
+			if mode&0111 != 0 {
+				return fullPath, true
+			}
 		}
 	}
 	return "", false
